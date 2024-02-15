@@ -112,6 +112,5 @@ public class RhythmJudge : MonoBehaviour, IBeatTimeSubject
     private void HandleSkip()
     {
         scoreSheet.Push(0f);
-        Debug.Log("skip");
     }
 }

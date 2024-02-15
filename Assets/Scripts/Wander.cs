@@ -61,7 +61,7 @@ public class Wander : MonoBehaviour
         float closestRingRadius = float.MaxValue;
         float smallestDifference = float.MaxValue;
 
-        foreach (var ring in Environment.Instance.rings)
+        foreach (var ring in Environment.Instance.RingRadii)
         {
             float difference = Mathf.Abs(ring - distanceFromCenter);
             if (difference < smallestDifference)

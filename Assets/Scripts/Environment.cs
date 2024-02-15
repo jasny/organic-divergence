@@ -1,16 +1,20 @@
+using System.Linq;
 using UnityEngine;
 
 public class Environment : MonoBehaviour
 {
     public float inSync = 0;
-    public float[] rings;
+    public Ring[] Rings { get; private set; }
+    public float[] RingRadii { get; private set; }
     public float boundary;
     
     public static Environment Instance { get; private set; }
     
-    // Singleton
     private void Awake()
     {
+        Rings = GetComponentsInChildren<Ring>();
+        RingRadii = Rings.Select(ring => ring.radius).ToArray();
+        
         InitializeSingleton();
     }
 
@@ -27,11 +31,11 @@ public class Environment : MonoBehaviour
     
     private void OnDrawGizmos()
     {
-        if (rings == null) return;
+        var radii = GetComponents<Ring>().Select(ring => ring.radius).ToArray();
         
         var position = new Vector3(0, 0, 0);
         
-        foreach (var radius in rings)
+        foreach (var radius in radii)
         {
             Gizmos.color = Color.blue;
             Gizmos.DrawWireSphere(position, radius);
