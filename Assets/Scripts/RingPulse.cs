@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -74,7 +73,7 @@ public class RingPulse : MonoBehaviour, IBeatTimeSubject
 
         var colors = SelectColors(colorTravel ? 0 : (current + 1 % 4), beatCount);
 
-        for (int i = 0; i < rings.Length; i++)
+        for (var i = 0; i < rings.Length; i++)
         {
             var ring = rings[i];
             

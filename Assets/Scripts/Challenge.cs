@@ -14,29 +14,44 @@ public class Challenge : MonoBehaviour
     public int beats;
     public bool syncopation;
 
-    private bool _wasActive = false;
+    private void Update()
+    {
+        if (!audioController.IsPlaying || !IsActive) return;
+        
+        if (isComplete && audioController.IsLooping) audioController.DisableLoop();
+        if (ShouldDeactivate()) Deactivate();
+    }
     
     private void LateUpdate()
     {
-        if (!audioController.IsPlaying) return;
-        if (audioController.BeatDeltaTime < 0.2f) return; // Grace period
-        
-        var currentBeat = audioController.CurrentBeat;
-        IsActive = currentBeat >= startBeat && currentBeat < startBeat + beats;
-
-        if (!_wasActive && IsActive) Activate();
-        if (_wasActive && !IsActive) Deactivate();
-        
-        if (IsActive && isComplete) audioController.DisableLoop();
-
-        _wasActive = IsActive;
+        if (!audioController.IsPlaying || IsActive) return;
+        if (ShouldActivate()) Activate();
     }
+    
+    private bool ShouldActivate()
+    {
+        if (Environment.Instance.activeChallenge) return false;
+        
+        var currentBeat = audioController.Beat;
+        return currentBeat >= startBeat && currentBeat < startBeat + beats;
+    }
+
+    private bool ShouldDeactivate()
+    {
+        if (!isComplete) return false;
+        
+        var currentBeat = audioController.Beat;
+        return currentBeat < startBeat || currentBeat > startBeat + beats;
+    }
+    
 
     private void Activate()
     {
+        IsActive = true;
+        Environment.Instance.activeChallenge = this;
+        
         if (challengeElement) challengeElement.SetActive(true);
-
-        audioController.EnableLoop(startBeat, beats);
+        if (!isComplete) audioController.EnableLoop(startBeat, beats);
         
         BeatTimer.Instance.totalBeats = beats;
         BeatTimer.Instance.Syncopation = syncopation;
@@ -44,10 +59,12 @@ public class Challenge : MonoBehaviour
         if (displayCurrentChallenge) displayCurrentChallenge.text = name;
     }
     
-    // Beware, the other challenge might have already been activated
     private void Deactivate()
     {
+        IsActive = false;
+        Environment.Instance.activeChallenge = null;
+
         if (challengeElement) challengeElement.SetActive(false);
-        if (displayCurrentChallenge && displayCurrentChallenge.text == name) displayCurrentChallenge.text = "";;
+        if (displayCurrentChallenge && displayCurrentChallenge.text == name) displayCurrentChallenge.text = "";
     }
 }

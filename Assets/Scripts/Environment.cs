@@ -7,6 +7,8 @@ public class Environment : MonoBehaviour
     public Ring[] Rings { get; private set; }
     public float[] RingRadii { get; private set; }
     public float boundary;
+
+    public Challenge activeChallenge;
     
     public static Environment Instance { get; private set; }
     

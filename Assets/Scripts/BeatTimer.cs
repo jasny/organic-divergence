@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,6 +10,10 @@ public class BeatTimer : MonoBehaviour
     private HashSet<IBeatTimeSubject> _subjects;
 
     public float bpm = 120f;
+    public float BeatInterval { get; private set; }
+
+    public float offset;
+    
     private bool _syncopation;
     public bool Syncopation
     {
@@ -21,7 +26,7 @@ public class BeatTimer : MonoBehaviour
 
             if (value)
             {
-                _beatCount *= 2 - (_timeSinceLastCheck < BeatInterval / 2 ? 1 : 0);
+                _beatCount *= 2 - (_beatDeltaTime < BeatInterval / 2 ? 1 : 0);
             }
             else
             {
@@ -30,13 +35,20 @@ public class BeatTimer : MonoBehaviour
         }
     }
 
-    public float BeatInterval { get; private set; }
-    private float _timeSinceLastCheck = 0f;
+    private AudioController _audioController;
+    private int _audioCurrentBeat = -1;
+    private float _beatDeltaTime = 0f;
     
     [SerializeField] private Text DisplayCurrentBeat;
 
     public int totalBeats = 16;
     private int _beatCount = 0;
+
+    private void OnValidate()
+    {
+        var controller = GetComponent<AudioController>();
+        if (controller) bpm = controller.bpm;
+    }
 
     // Singleton
     private void Awake()
@@ -49,24 +61,48 @@ public class BeatTimer : MonoBehaviour
         
         Instance = this;
         _subjects = new HashSet<IBeatTimeSubject>();
-        
+
+        _audioController = GetComponent<AudioController>();
         BeatInterval = 60f / bpm;
     }
 
     private void Update()
     {
+        if (_audioController)
+        {
+            TimeOnAudio();
+        }
+        else
+        {
+            TimeStandalone();
+        }
+    }
+
+    private void TimeOnAudio()
+    {
         var interval = BeatInterval / (_syncopation ? 2 : 1);
+        var beat = Mathf.FloorToInt((_audioController.Time + offset) / interval) + 1;
         
-        _timeSinceLastCheck += Time.deltaTime;
-        if (_timeSinceLastCheck < interval) return;
+        if (_audioCurrentBeat == beat || beat < 0) return;
         
+        _audioCurrentBeat = beat;
         OnBeat();
-        _timeSinceLastCheck -= interval;
+    }
+
+    private void TimeStandalone()
+    {
+        var interval = BeatInterval / (_syncopation ? 2 : 1);
+
+        _beatDeltaTime += Time.deltaTime;
+        if (_beatDeltaTime < interval) return;
+
+        _beatDeltaTime -= interval;
+        OnBeat();
     }
 
     private void OnBeat()
     {
-        _beatCount = (_beatCount % totalBeats) + 1;
+        _beatCount = _audioController ? (_audioCurrentBeat - 1) % totalBeats + 1 : (_beatCount % totalBeats) + 1;
 
         if (DisplayCurrentBeat) DisplayCurrentBeat.text = _beatCount.ToString();
         
