@@ -1,28 +1,53 @@
-using System;
 using UnityEngine;
+using UnityEngine.UI;
 
-public class Challenge : MonoBehaviour, IBeatTimeSubject
+public class Challenge : MonoBehaviour
 {
-    [SerializeField] private Behaviour challengeComponent;
+    [SerializeField] private GameObject challengeElement;
     [SerializeField] private AudioController audioController;
+    [SerializeField] private Text displayCurrentChallenge;
 
     public bool IsActive { get; private set; }
     public bool isComplete = false;
 
-    public int audioPhrase;
+    public int startBeat;
+    public int beats;
+    public bool syncopation;
 
-    private void Start()
+    private bool _wasActive = false;
+    
+    private void LateUpdate()
     {
-        BeatTimer.Instance.Register(this);
+        if (!audioController.IsPlaying) return;
+        if (audioController.BeatDeltaTime < 0.2f) return; // Grace period
+        
+        var currentBeat = audioController.CurrentBeat;
+        IsActive = currentBeat >= startBeat && currentBeat < startBeat + beats;
+
+        if (!_wasActive && IsActive) Activate();
+        if (_wasActive && !IsActive) Deactivate();
+        
+        if (IsActive && isComplete) audioController.DisableLoop();
+
+        _wasActive = IsActive;
     }
 
-    public void OnBeat(int beatCount)
+    private void Activate()
     {
-        IsActive = audioController.CurrentPhrase == audioPhrase;
-        challengeComponent.enabled = IsActive;
+        if (challengeElement) challengeElement.SetActive(true);
+
+        audioController.EnableLoop(startBeat, beats);
         
-        if (!IsActive) return;
+        BeatTimer.Instance.totalBeats = beats;
+        BeatTimer.Instance.Syncopation = syncopation;
         
-        audioController.LoopPhrase = isComplete ? 0 : audioPhrase;
+        if (displayCurrentChallenge) displayCurrentChallenge.text = name;
+    }
+    
+    // Beware, the other challenge might have already been activated
+    private void Deactivate()
+    {
+        if (challengeElement) challengeElement.SetActive(false);
+        if (displayCurrentChallenge && displayCurrentChallenge.text == name) displayCurrentChallenge.text = "";;
     }
 }

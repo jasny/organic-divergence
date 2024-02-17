@@ -1,49 +1,75 @@
-using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.Rendering.Universal;
 
-[System.Serializable]
-public class KeyCodeColorPair
-{
-    public KeyCode key;
-    public Color color;
-}
-
 public class ColorSwitch : MonoBehaviour
 {
+    private SpriteRenderer _sprite;
     private Light2D _light;
     
     [SerializeField] private List<KeyCodeColorPair> keyCodeColorPairs;
+    [SerializeField] private float gracePeriod = 0.2f;
+    private float _timeSinceChange;
+
+    private bool _isInGracePeriod = false;
+    private readonly List<Color> _colorsDuringGracePeriod = new();
 
     private void Awake()
     {
+        _sprite = GetComponent<SpriteRenderer>();
         _light = GetComponent<Light2D>();
     }
 
     private void Update()
     {
-        Color tempColor = Color.black; // Start with black (no color)
-        int colorCount = 0;
-
-        foreach (var pair in keyCodeColorPairs)
+        if (!_isInGracePeriod)
         {
-            if (Input.GetKey(pair.key)) // Use GetKey to check if the key is held down
+            // Start the grace period when the first key is pressed
+            foreach (var pair in keyCodeColorPairs)
             {
-                tempColor += pair.color;
-                colorCount++;
+                if (!Input.GetKeyDown(pair.key)) continue;
+                
+                _isInGracePeriod = true;
+                _timeSinceChange = 0;
+                _colorsDuringGracePeriod.Clear();
+                AddColor(pair.color);
             }
         }
+        else
+        {
+            _timeSinceChange += Time.deltaTime;
 
-        if (colorCount == 0)
-        {
-            tempColor = Color.white;
-        } else
-        {
-            //tempColor /= colorCount; // Average the color by the number of keys pressed
+            foreach (var pair in keyCodeColorPairs.Where(pair => Input.GetKey(pair.key)))
+            {
+                AddColor(pair.color);
+            }
+
+            if (!(_timeSinceChange >= gracePeriod)) return;
+            
+            ApplyCollectedColors();
+            _isInGracePeriod = false;
         }
-        
-        _light.color = tempColor;
+    }
+
+    private void AddColor(Color color)
+    {
+        if (!_colorsDuringGracePeriod.Contains(color))
+        {
+            _colorsDuringGracePeriod.Add(color);
+        }
+    }
+
+    private void ApplyCollectedColors()
+    {
+        if (_colorsDuringGracePeriod.Count == 0) return;
+
+        var finalColor = new Color(0, 0, 0, 0);
+        finalColor = _colorsDuringGracePeriod.Aggregate(finalColor, (current, color) => current + color);
+
+        if (finalColor == Color.blue) finalColor = new Color(0, 0.25f, 1); // Workaround because you can't see blue
+
+        if (_sprite) _sprite.color = finalColor;
+        if (_light) _light.color = finalColor;
     }
 }

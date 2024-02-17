@@ -1,15 +1,11 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class RhythmJudge : MonoBehaviour, IBeatTimeSubject
 {
-    public ScoreSheet scoreSheet;
+    private ScoreSheet _scoreSheet;
     
-    public float InSync => Mathf.Clamp(scoreSheet.WeightedAvg, 0, 1f);
-
     private float _beatInterval;
     
     private bool _isKeyPressed = false;
@@ -19,11 +15,19 @@ public class RhythmJudge : MonoBehaviour, IBeatTimeSubject
     
     public float perfectTiming = 0.05f;
     public float goodTiming = 0.15f;
+
+    public float perfectScore = 1f;
+    public float goodScore = 0.7f;
+    
+    [SerializeField] private KeyCode[] keys;
+    [SerializeField] private Text DisplayHit;
     
     private void Start()
     {
         BeatTimer.Instance.Register(this);
         _beatInterval = BeatTimer.Instance.BeatInterval;
+
+        _scoreSheet = GetComponent<ScoreSheet>();
     }
 
     public void OnBeat(int beatCount)
@@ -49,23 +53,14 @@ public class RhythmJudge : MonoBehaviour, IBeatTimeSubject
     {
         _judgeBeatCount = _timerBeatCount;
         if (!_isKeyPressed) HandleSkip();
-
-        Environment.Instance.inSync = InSync;
     }
 
-    private static KeyCode KeyPressed()
+    private KeyCode KeyPressed()
     {
-        if (Input.GetKeyDown(KeyCode.A)) return KeyCode.A;
-        if (Input.GetKeyDown(KeyCode.S)) return KeyCode.S;
-        if (Input.GetKeyDown(KeyCode.D)) return KeyCode.D;
-        if (Input.GetKeyDown(KeyCode.F)) return KeyCode.F;
-        if (Input.GetKeyDown(KeyCode.J)) return KeyCode.J;
-        if (Input.GetKeyDown(KeyCode.K)) return KeyCode.K;
-        if (Input.GetKeyDown(KeyCode.L)) return KeyCode.L;
-        if (Input.GetKeyDown(KeyCode.Semicolon)) return KeyCode.Semicolon;
-        if (Input.GetKeyDown(KeyCode.Space)) return KeyCode.Space;
-
-        return KeyCode.None;
+        if (keys.Length == 0) return KeyCode.None;
+        
+        var key = keys[(_timerBeatCount + keys.Length - 1) % keys.Length];
+        return Input.GetKeyDown(key) ? key : KeyCode.None;
     }
     
     private void CheckKeyPress()
@@ -93,24 +88,25 @@ public class RhythmJudge : MonoBehaviour, IBeatTimeSubject
     
     private void HandlePerfectHit()
     {
-        scoreSheet.Push(0.9f);
-        Debug.Log("perfect");
+        if (_scoreSheet) _scoreSheet.Push(perfectScore);
+        if (DisplayHit) DisplayHit.text = "Perfect!";
     }
 
     private void HandleHit()
     {
-        scoreSheet.Push(0.9f);
-        Debug.Log("good");
+        if (_scoreSheet) _scoreSheet.Push(goodScore);
+        if (DisplayHit) DisplayHit.text = "Good";
     }
 
     private void HandleMiss()
     {
-        scoreSheet.Push(0f);
-        Debug.Log("miss");
+        if (_scoreSheet) _scoreSheet.Push(0f);
+        if (DisplayHit) DisplayHit.text = "Miss";
     }
     
     private void HandleSkip()
     {
-        scoreSheet.Push(0f);
+        if (_scoreSheet) _scoreSheet.Push(0f);
+        if (DisplayHit) DisplayHit.text = "zzz";
     }
 }
