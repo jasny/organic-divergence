@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,6 +11,8 @@ public class ScoreSheet : MonoBehaviour
     public int size;
     public float weightFactor = 1.0f;
 
+    [SerializeField] private float score;
+    
     private void Awake()
     {
         _array = new float[size];
@@ -42,5 +45,10 @@ public class ScoreSheet : MonoBehaviour
 
             return total / weightSum;
         }
+    }
+
+    public void FixedUpdate()
+    {
+        score = WeightedAvg;
     }
 }

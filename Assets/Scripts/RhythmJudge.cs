@@ -5,14 +5,15 @@ using UnityEngine.UI;
 public class RhythmJudge : MonoBehaviour, IBeatTimeSubject
 {
     private ScoreSheet _scoreSheet;
-    
-    private float _beatInterval;
+
+    [SerializeField] private float _beatInterval;
+    [SerializeField] private int _totalBeats;
     
     private bool _isKeyPressed = false;
     private float _timer;
     private int _timerBeatCount;
     private int _judgeBeatCount;
-    
+
     public float perfectTiming = 0.05f;
     public float goodTiming = 0.15f;
 
@@ -21,7 +22,8 @@ public class RhythmJudge : MonoBehaviour, IBeatTimeSubject
     
     [SerializeField] private KeyCode[] keys;
     [SerializeField] private Text DisplayHit;
-
+    [SerializeField] private string beatPattern;
+    
     private void Start()
     {
         BeatTimer.Instance.Register(this);
@@ -32,39 +34,47 @@ public class RhythmJudge : MonoBehaviour, IBeatTimeSubject
     {
         _judgeBeatCount = 0;
         _timerBeatCount = 0;
-        
-        var beatTimer = BeatTimer.Instance;
-        _beatInterval = beatTimer.BeatInterval / (beatTimer.Syncopation ? 2 : 1);
     }
 
     public void OnBeat(int beatCount)
     {
         _timer = _beatInterval;
         _timerBeatCount = beatCount;
+
+        if (_judgeBeatCount == 0) InitJudge();
+    }
+
+    private void InitJudge()
+    {
+        _judgeBeatCount = _timerBeatCount;
+            
+        var beatTimer = BeatTimer.Instance;
+        _beatInterval = beatTimer.BeatInterval / (beatTimer.Syncopation ? 2 : 1);
+        _totalBeats = beatTimer.totalBeats * (beatTimer.Syncopation ? 2 : 1);
     }
     
     private void Update()
     {
-        _timer -= Time.deltaTime;
-        CheckKeyPress();
+        if (_judgeBeatCount == 0) return; // Before first beat
 
-        if (_timer > _beatInterval / 2 || _judgeBeatCount == _timerBeatCount) return;
+        CheckKeyPress();
         
-        NextBeat();
-        _isKeyPressed = false;
+        _timer -= Time.deltaTime;
+        if (_judgeBeatCount == _timerBeatCount && _timer < _beatInterval / 2) NextBeat();
     }
 
     private void NextBeat()
     {
-        if (!_isKeyPressed) HandleSkip();
-        _judgeBeatCount = _timerBeatCount;
+        if (!_isKeyPressed && ShouldHit()) HandleSkip();
+        _judgeBeatCount = (_timerBeatCount % _totalBeats) + 1;
+        _isKeyPressed = false;
     }
 
     private KeyCode KeyPressed()
     {
         if (keys.Length == 0) return KeyCode.None;
         
-        var key = keys[(_judgeBeatCount + keys.Length - 1) % keys.Length];
+        var key = keys[(_judgeBeatCount - 1) % keys.Length];
         return Input.GetKeyDown(key) ? key : KeyCode.None;
     }
     
@@ -76,9 +86,13 @@ public class RhythmJudge : MonoBehaviour, IBeatTimeSubject
         if (keyPressed == KeyCode.None) return;
         
         _isKeyPressed = true;
-        
-        Debug.Log(Math.Min(Math.Abs(_timer - _beatInterval), Math.Abs(_timer)));
-        
+
+        if (!ShouldHit())
+        {
+            HandleMiss();
+            return;
+        }
+
         if (Math.Abs(_timer - _beatInterval) <= perfectTiming || Math.Abs(_timer) <= perfectTiming)
         {
             HandlePerfectHit();
@@ -91,6 +105,13 @@ public class RhythmJudge : MonoBehaviour, IBeatTimeSubject
         {
             HandleMiss();
         }
+    }
+
+    private bool ShouldHit()
+    {
+        if (beatPattern == "") return true;
+
+        return beatPattern[_judgeBeatCount - 1] == '+';
     }
     
     private void HandlePerfectHit()

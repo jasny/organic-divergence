@@ -81,7 +81,7 @@ public class BeatTimer : MonoBehaviour
     private void TimeOnAudio()
     {
         var interval = BeatInterval / (_syncopation ? 2 : 1);
-        var beat = Mathf.FloorToInt((_audioController.Time + offset) / interval) + 1;
+        var beat = Mathf.FloorToInt((_audioController.Time - offset) / interval) + 1;
         
         if (_audioCurrentBeat == beat || beat < 0) return;
         

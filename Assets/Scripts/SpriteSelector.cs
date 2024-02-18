@@ -11,11 +11,29 @@ public class SpriteSelector : MonoBehaviour
 
     private void Start()
     {
+        Randomize();
+    }
+
+    public void Randomize()
+    {
         foreach (var resolver in spriteResolvers)
         {
             RandomizeSprite(resolver);
         }
 
+        SetSpriteLight();
+    }
+
+    public void ChangeLibrary(SpriteLibraryAsset library)
+    {
+        ChangeLibrary(0, library);
+    }
+    
+    public void ChangeLibrary(int index, SpriteLibraryAsset library)
+    {
+        var resolver = spriteResolvers[index];
+        resolver.spriteLibrary.spriteLibraryAsset = library;
+        
         SetSpriteLight();
     }
     

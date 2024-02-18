@@ -3,13 +3,17 @@ using UnityEngine;
 public class Wander : MonoBehaviour
 {
     public float wanderlust = 0;
+    public bool rotate;
     
     public float minSpeed = 0.5f;
     public float maxSpeed = 1f;
     
     private Vector3 _originalPosition;
     private Vector3 _destination;
+    private Quaternion _rotation;
     private float _speed;
+
+    public bool free;
 
     private void Start()
     {
@@ -19,56 +23,48 @@ public class Wander : MonoBehaviour
 
     private void NewDestination()
     {
-        var distance = Random.Range(0.5f, wanderlust);
+        var distance = Random.Range(Mathf.Max(wanderlust / 10, 0.5f), wanderlust);
         var directionDegrees = Random.value * 360;
-        var direction = VectorUtils.Vector2FromDegrees(distance, directionDegrees);
-        var newPosition = VectorUtils.CenterBetween(transform.position, _originalPosition) + (Vector3)direction;
+        var direction = (Vector3)VectorUtils.Vector2FromDegrees(distance, directionDegrees);
+        var newPosition = VectorUtils.CenterBetween(transform.position, _originalPosition) + direction;
 
         _speed = Random.Range(minSpeed, maxSpeed);
-        
-        // Check if within boundary
-        if (!Environment.Instance || Vector3.Distance(transform.position, Vector3.zero) > Environment.Instance.boundary)
+
+        if (rotate)
+        {
+            var (yRotation, zRotation) = VectorUtils.AngleToFlipAndRotation(directionDegrees);
+            transform.rotation = Quaternion.Euler(0, yRotation, transform.rotation.eulerAngles.z);
+            _rotation = Quaternion.Euler(0, yRotation, zRotation);
+        }
+
+        if (free || !Environment.Instance || Vector3.Distance(transform.position, Vector3.zero) > Environment.Instance.boundary)
         {
             _destination = newPosition;
             return;
         }
 
-        float closestRingDistance = ClosestRing();
+        var closestRingDistance = ClosestRing();
+        var inSync = Environment.Instance.inSync;
+        var directionToCenter = (transform.position - Vector3.zero).normalized;
+        var attractedPosition = Vector3.zero + directionToCenter * closestRingDistance;
 
-        // Calculate the influence of the closest ring based on inSync
-        float inSync = Environment.Instance.inSync;
-        
-        // Calculate the nearest position on the closest ring
-        Vector3 directionToCenter = (transform.position - Vector3.zero).normalized;
-
-        // Assuming 'closestRingDistance' is the radius of the closest ring
-        Vector3 attractedPosition = Vector3.zero + directionToCenter * closestRingDistance;
-
-        // Pick a position between `newPosition` and `attractedPosition` based on `inSync`
-        _destination = Vector3.Lerp(newPosition, attractedPosition, inSync);
-
-        
-        // Pick a position between `newPosition` and `attractedPosition` based on `inSync`.
-        // The lower `inSync`, the closer it should be to `newPosition`
-        // The higher `inSync`, the closer it should be to `attractedPosition`
         _destination = Vector3.Lerp(newPosition, attractedPosition, inSync);
     }
 
     private float ClosestRing()
     {
-        float distanceFromCenter = Vector3.Distance(transform.position, Vector3.zero);
+        var distanceFromCenter = Vector3.Distance(transform.position, Vector3.zero);
 
-        float closestRingRadius = float.MaxValue;
-        float smallestDifference = float.MaxValue;
+        var closestRingRadius = float.MaxValue;
+        var smallestDifference = float.MaxValue;
 
         foreach (var ring in Environment.Instance.RingRadii)
         {
-            float difference = Mathf.Abs(ring - distanceFromCenter);
-            if (difference < smallestDifference)
-            {
-                closestRingRadius = ring;
-                smallestDifference = difference;
-            }
+            var difference = Mathf.Abs(ring - distanceFromCenter);
+            if (!(difference < smallestDifference)) continue;
+            
+            closestRingRadius = ring;
+            smallestDifference = difference;
         }
 
         return closestRingRadius;
@@ -85,6 +81,7 @@ public class Wander : MonoBehaviour
         else
         {
             transform.position = Vector3.MoveTowards(transform.position, _destination, _speed * Time.deltaTime);
+            if (rotate) transform.rotation = Quaternion.RotateTowards(transform.rotation, _rotation, 20 * Time.deltaTime);
         }
     }
 }

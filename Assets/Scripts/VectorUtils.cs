@@ -25,4 +25,16 @@ public static class VectorUtils
     {
         return Vector2.Distance(new Vector2(positionA.x, positionA.z), new Vector2(positionB.x, positionB.z));
     }
+    
+    public static (float y, float z) AngleToFlipAndRotation(float angle)
+    {
+        angle %= 360;
+        if (angle < 0) angle += 360;
+
+        var yRotation = (angle > 90 && angle < 270) ? 180 : 0;
+        var zRotation = angle <= 180 ? angle : 360 - angle;
+        if (zRotation > 90) zRotation -= 180;
+
+        return (yRotation, zRotation);
+    }
 }
