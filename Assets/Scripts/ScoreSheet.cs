@@ -28,6 +28,8 @@ public class ScoreSheet : MonoBehaviour
     {
         get
         {
+            if (_array.Length == 0) return 0;
+            
             var total = 0f;
             var weightSum = 0f;
             var currentWeight = 1f;

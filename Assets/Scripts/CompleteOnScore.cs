@@ -21,7 +21,7 @@ public class CompleteOnScore : MonoBehaviour, IBeatTimeSubject
     public void OnBeat(int beatCount)
     {
         if (!_challenge.IsActive) return;
-        
+
         if (scoreSheet.WeightedAvg >= requiredScore)
         {
             _positiveBeatCount++;

@@ -1,5 +1,7 @@
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.UI;
 
 public class Environment : MonoBehaviour
 {
@@ -9,6 +11,7 @@ public class Environment : MonoBehaviour
     public float boundary;
 
     public Challenge activeChallenge;
+    public Slider power;
     
     public static Environment Instance { get; private set; }
     

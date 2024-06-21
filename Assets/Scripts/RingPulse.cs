@@ -71,7 +71,7 @@ public class RingPulse : MonoBehaviour, IBeatTimeSubject
         var current = (beatCount - 1 + offset) % 4;
         if (direction == Direction.Inwards) current = 3 - current;
 
-        var colors = SelectColors(colorTravel ? 0 : (current + 1 % 4), beatCount);
+        var colors = SelectColors(colorTravel ? offset : (current + 1 % 4), beatCount);
 
         for (var i = 0; i < rings.Length; i++)
         {

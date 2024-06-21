@@ -1,12 +1,18 @@
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class Challenge : MonoBehaviour
 {
     [SerializeField] private GameObject challengeElement;
     [SerializeField] private AudioController audioController;
-    [SerializeField] private Text displayCurrentChallenge;
+    [SerializeField] private TextMeshProUGUI displayCurrentChallenge;
+    [SerializeField] private TextMeshProUGUI displayHelp;
+    [SerializeField] private GenericSwitch displayComplete;
 
+    public bool resetPower;
+
+    [TextArea] public string helpText;
+    
     public bool IsActive { get; private set; }
     public bool isComplete = false;
 
@@ -17,9 +23,16 @@ public class Challenge : MonoBehaviour
     private void Update()
     {
         if (!audioController.IsPlaying || !IsActive) return;
+
+        if (displayComplete) displayComplete.IsOn = isComplete;
         
         if (isComplete && audioController.IsLooping) audioController.DisableLoop();
         if (ShouldDeactivate()) Deactivate();
+
+        if (IsActive && isComplete && displayHelp && displayHelp.text == helpText)
+        {
+            displayHelp.text = "Nothing to do. Just chill.";
+        }
     }
     
     private void LateUpdate()
@@ -55,8 +68,11 @@ public class Challenge : MonoBehaviour
         
         BeatTimer.Instance.totalBeats = beats;
         BeatTimer.Instance.Syncopation = syncopation;
+
+        if (resetPower) Environment.Instance.power.value = 1;
         
-        if (displayCurrentChallenge) displayCurrentChallenge.text = name;
+        if (displayCurrentChallenge) displayCurrentChallenge.text = name.ToUpper();
+        if (displayHelp) displayHelp.text = helpText;
     }
     
     private void Deactivate()
@@ -65,6 +81,11 @@ public class Challenge : MonoBehaviour
         Environment.Instance.activeChallenge = null;
 
         if (challengeElement) challengeElement.SetActive(false);
-        if (displayCurrentChallenge && displayCurrentChallenge.text == name) displayCurrentChallenge.text = "";
+
+        if (displayCurrentChallenge && displayCurrentChallenge.text == name)
+        {
+            displayCurrentChallenge.text = "";
+            if (displayHelp) displayHelp.text = "";
+        }
     }
 }

@@ -12,7 +12,8 @@ public class BeatTimer : MonoBehaviour
     public float bpm = 120f;
     public float BeatInterval { get; private set; }
 
-    public float offset;
+    [SerializeField] private Slider offsetSlider;
+    [SerializeField] private float offset;
     
     private bool _syncopation;
     public bool Syncopation
@@ -64,6 +65,8 @@ public class BeatTimer : MonoBehaviour
 
         _audioController = GetComponent<AudioController>();
         BeatInterval = 60f / bpm;
+        
+        if (offsetSlider) offsetSlider.value = offset;
     }
 
     private void Update()
@@ -121,5 +124,10 @@ public class BeatTimer : MonoBehaviour
     public void Unregister(IBeatTimeSubject subject)
     {
         _subjects.Remove(subject);
+    }
+
+    public void SetOffset(float value)
+    {
+        offset = value;
     }
 }
